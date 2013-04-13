@@ -14,7 +14,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class MeteorMod extends JavaPlugin implements Runnable, Listener {
+public final class MeteorMod extends JavaPlugin implements Listener {
 	Player p;
 	Meteorite m;
 	long randomLong = 0;
@@ -22,11 +22,12 @@ public final class MeteorMod extends JavaPlugin implements Runnable, Listener {
 	@Override
 	public void onEnable()	{
 		getServer().getPluginManager().registerEvents(this, this);
+		  Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new scheduledReckoning(), 20*20);
 	}
 	
 	@Override
 	public void onDisable()	{
-		
+		Bukkit.getServer().getScheduler().cancelTasks(this);
 	}
 	
 /*	public boolean onCommand (CommandSender sender, Command cmd, String label, String[] args)	{
@@ -165,26 +166,34 @@ public final class MeteorMod extends JavaPlugin implements Runnable, Listener {
 	}
 	
 	public void startReckoning(long rLong)	{
-		  Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new MeteorMod(), rLong);	
+		  Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new scheduledReckoning(), rLong);	
 		  }
 	
 	public void stopReckoning()	{
 		Bukkit.getServer().getScheduler().cancelTasks(this);
 	}
 
-	@Override
-	public void run() {
-		Player pTarget = getServer().getOnlinePlayers()[(int) (getServer().getOnlinePlayers().length * Math.random())];
-		Location target = pTarget.getLocation();
-		int radius = -1;
-		int countdown = -1;
-		String material = "";
-		boolean blockDamage = false;
+
+
+	public class scheduledReckoning	implements Runnable	{
+		@Override
+		public void run() {
+			Player pTarget = getServer().getOnlinePlayers()[(int) (getServer().getOnlinePlayers().length * Math.random())];
+			Location target = pTarget.getLocation();
+			target.setX((int) ((160 * Math.random()) - 80));
+			target.setZ((int) ((160 * Math.random()) - 80));
+			int radius = -1;
+			int countdown = -1;
+			String material = "";
+			boolean blockDamage = false;
 		
-		m = new Meteorite(pTarget, target, material, radius, countdown, blockDamage);
-		m.genMeteorite();
-		m.countdown();
-		m.setFalling(true);
-		m.dropMeteorite();
+			Logger.getLogger("Minecraft").info(pTarget.getName());
+			m = new Meteorite(pTarget, target, material, radius, countdown, blockDamage);
+			m.genMeteorite();
+			m.countdown();
+			m.setFalling(true);
+			m.dropMeteorite();
+			startReckoning((long) ((5*60*20 * Math.random()) + 5*60*20));
+		}
 	}
 }
