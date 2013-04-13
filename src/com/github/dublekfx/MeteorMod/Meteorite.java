@@ -3,37 +3,68 @@ package com.github.dublekfx.MeteorMod;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Logger;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.EntityBlockFormEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.plugin.Plugin;
 
-public class Meteorite {
+public class Meteorite implements Listener{
 	
+	private int countdown;
 	private int radius;
 	private final int DEFAULT_RADIUS = 3;
-	private Location target;
+	private final int DEFAULT_COUNTDOWN = 20;
+	protected Location target;
 	private Location skyTarget;
+	private Player pTarget;
+	private boolean executeCountdown;
 	private boolean falling;
-	private Material mat = Material.NETHERRACK;
+	private boolean explosionBlockDamage;
+	private Material mat;
+	private final Material DEFAULT_MAT = Material.NETHERRACK;
 	private ArrayList<Location> sphereCoords = new ArrayList<Location>();
-	private ArrayList<UUID> blockID = new ArrayList<UUID>();
-
-	public Meteorite(Location xyz)	{
-		target = xyz;
-		radius = DEFAULT_RADIUS;
-		skyTarget = target.clone();
-		target.setY(target.getWorld().getHighestBlockAt(target).getY());
-		skyTarget.setY(255 - radius);
-		falling = false;
+	protected ArrayList<UUID> blockID = new ArrayList<UUID>();
+	
+	public Meteorite(Player pT, int c)	{
+		pTarget = pT;
+		countdown = c;
 	}
-	public Meteorite(Location xyz, int r)	{
+	public Meteorite(Player pT, Location xyz, String m, int r, int c, boolean explode)	{
+		if (pT != null)	{
+			pTarget = pT;
+		}
 		target = xyz;
-		radius = r;
-		skyTarget = target.clone();
+		
+		this.defaultMeteorite();
+		
+		if (r != -1)	{
+			radius = r;
+		}
+		if (!(m.equalsIgnoreCase("")))	{
+			Material.matchMaterial(m);
+		}
+		if (c != -1)	{
+			countdown = c;
+			executeCountdown = true;
+		}
+		explosionBlockDamage = explode;
+	}
+	
+	public void defaultMeteorite()	{
+		//target handled by constructor
+		radius = DEFAULT_RADIUS;
+		skyTarget = target;		//did I just alias?
 		target.setY(target.getWorld().getHighestBlockAt(target).getY());
 		skyTarget.setY(255 - radius);
 		falling = false;
+		executeCountdown = false;
+		mat = DEFAULT_MAT;
 	}
 	public boolean isFalling()	{
 		return falling;
@@ -43,8 +74,11 @@ public class Meteorite {
 	}
 		
 	public void dropMeteorite()	{
+		if (executeCountdown == true)	{
+			this.countdown();
+		}
 		if (sphereCoords.size() >= 1 && this.isFalling())	{	//Ensures that genSphereCoords has been run, and falling = true
-			target.getBlock().setType(Material.LAPIS_BLOCK);
+			//target.getBlock().setType(Material.LAPIS_BLOCK);
 			for (Location a : sphereCoords)	{			
 				a.getBlock().setType(Material.AIR);
 				blockID.add(skyTarget.getWorld().spawnFallingBlock(a, mat, (byte) 0).getUniqueId());
@@ -56,49 +90,55 @@ public class Meteorite {
 	}
 	
 	public void genMeteorite()	{	//Creates a floating ball. dropMeteor must be called separately
-		this.genSphereCoords();
+		sphereCoords = this.genSphereCoords(radius);
+		sphereCoords.removeAll(this.genSphereCoords(radius - 1));
 		for (Location a : sphereCoords)	{			
 				a.getBlock().setType(mat);
 		}
 	}
 	
-	/*@EventHandler
-	public void onEntityBlockForm(EntityBlockFormEvent event){
-		Logger.getLogger("Minecraft").info("Meteor in position!");
-		if(event.getBlock().getLocation().equals(target) && event.getBlock().getType().equals(mat))	{
-			Logger.getLogger("Minecraft").info("Meteor in position!");
-			this.explode();
-		}
-	}*/
-	
-	private void genSphereCoords()	{
-		double bpow = Math.pow(radius, 2);
+	private ArrayList<Location> genSphereCoords(int r)	{
+		ArrayList<Location> coords = new ArrayList<Location>();
+		double bpow = Math.pow(r, 2);
 		double bx = skyTarget.getX();
 		double by = skyTarget.getY();
 		double bz = skyTarget.getZ();
 		
-		 for (int z = 0; z <= radius; z++) {
+		 for (int z = 0; z <= r; z++) {
 	            double zpow = Math.pow(z, 2);
-	            for (int x = 0; x <= radius; x++) {
+	            for (int x = 0; x <= r; x++) {
 	                double xpow = Math.pow(x, 2);
-	                for (int y = 0; y <= radius; y++) {
+	                for (int y = 0; y <= r; y++) {
 	                    if ((xpow + Math.pow(y, 2) + zpow) <= bpow) {
-	                    	sphereCoords.add(new Location(skyTarget.getWorld(), bx + x, by + y, bz + z));
-	                    	sphereCoords.add(new Location(skyTarget.getWorld(), bx + x, by + y, bz - z));
-	                    	sphereCoords.add(new Location(skyTarget.getWorld(), bx - x, by + y, bz + z));
-	                    	sphereCoords.add(new Location(skyTarget.getWorld(), bx - x, by + y, bz - z));
-	                    	sphereCoords.add(new Location(skyTarget.getWorld(), bx + x, by - y, bz + z));
-	                    	sphereCoords.add(new Location(skyTarget.getWorld(), bx + x, by - y, bz - z));
-	                    	sphereCoords.add(new Location(skyTarget.getWorld(), bx - x, by - y, bz + z));
-	                    	sphereCoords.add(new Location(skyTarget.getWorld(), bx - x, by - y, bz - z));
+	                    	coords.add(new Location(skyTarget.getWorld(), bx + x, by + y, bz + z));
+	                    	coords.add(new Location(skyTarget.getWorld(), bx + x, by + y, bz - z));
+	                    	coords.add(new Location(skyTarget.getWorld(), bx - x, by + y, bz + z));
+	                    	coords.add(new Location(skyTarget.getWorld(), bx - x, by + y, bz - z));
+	                    	coords.add(new Location(skyTarget.getWorld(), bx + x, by - y, bz + z));
+	                    	coords.add(new Location(skyTarget.getWorld(), bx + x, by - y, bz - z));
+	                    	coords.add(new Location(skyTarget.getWorld(), bx - x, by - y, bz + z));
+	                    	coords.add(new Location(skyTarget.getWorld(), bx - x, by - y, bz - z));
 	                    }
 	                }
 	            }
-		 }		 
+		 }
+		 return coords;
 	}
-
-	public void explode()	{
-		target.getWorld().createExplosion(target, radius);
-		Logger.getLogger("Minecraft").info("KaBOOM");
+	public void explode(Location loc)	{
+		target.getWorld().createExplosion(loc.getX(), loc.getY(), loc.getZ(), 4F, false, explosionBlockDamage);
+		//Logger.getLogger("Minecraft").info("KaBOOM");
+	}
+	
+	public void countdown()	{
+		Logger.getLogger("Minecraft").info("Countdown Started");
+		int playerExp = pTarget.getTotalExperience();
+		long startTime = pTarget.getWorld().getFullTime();
+		for (int c = 0; c <= countdown; c++)	{
+			while (pTarget.getWorld().getFullTime() != startTime + c * 20)	{
+			}
+			pTarget.setLevel(countdown - c);
+			Logger.getLogger("Minecraft").info("Current time: " + (countdown - c));
+		}
+		pTarget.giveExp(playerExp);
 	}
 }

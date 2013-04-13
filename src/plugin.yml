@@ -1,5 +1,5 @@
 name: MeteorMod
-main: com.github.dublekfx.Meteor.MeteorMod
+main: com.github.dublekfx.MeteorMod.MeteorMod
 version: 1.0
 commands:
   meteor:
@@ -9,9 +9,12 @@ commands:
     permission-message: You are not Shiva!
   meteormod:
     description: "The Reckoning has arrived"
-    usage: /meteormod <player> <radius>
+    usage: /meteormod <p:player> <m:material> <r:radius> <e:blockdamage(true/false)> <c:countdown> 
     permission: meteor.launch
     permission-message: You are not Shiva!
+  countdown:
+    description: Experience Timer
+    usage: /countdown <duration>
 permissions:
   meteor.launch:
     description: Permits the user to reign justice down upon his enemies.
