@@ -17,6 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class MeteorMod extends JavaPlugin implements Runnable, Listener {
 	Player p;
 	Meteorite m;
+	long randomLong = 0;
 
 	@Override
 	public void onEnable()	{
@@ -112,6 +113,9 @@ public final class MeteorMod extends JavaPlugin implements Runnable, Listener {
 					else if (s.substring(0, 2).equalsIgnoreCase("m:"))	{
 						material = s.substring(2);
 					}
+					/*else if (s.substring(0, 2).equalsIgnoreCase("p:"))	{
+						
+					}*/
 				}
 				m = new Meteorite(pTarget, target, material, radius, countdown, blockDamage);
 				m.genMeteorite();
@@ -132,7 +136,9 @@ public final class MeteorMod extends JavaPlugin implements Runnable, Listener {
 			}
 		}
 		if (cmd.getName().equalsIgnoreCase("countdown"))	{
-			if (sender instanceof Player && args.length == 1)	{
+			if (args.length == 0)
+				return false;
+			else if (sender instanceof Player && args.length == 1)	{
 				m = new Meteorite(p, Integer.parseInt(args[0]));
 				m.countdown();
 				return true;
@@ -158,16 +164,27 @@ public final class MeteorMod extends JavaPlugin implements Runnable, Listener {
 
 	}
 	
-//		public void startReckoning()	{
-//			Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Meteorite()/*<- your task*/, 200L/*<- start delay in ticks*/, 100L/*repeat delay in ticks*/);
-//		}
+	public void startReckoning(long rLong)	{
+		  Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new MeteorMod(), rLong);	
+		  }
 	
-//	public void stopReckoning()	{
-//		Bukkit.getServer().getScheduler().cancelTasks(this);
-//	}
+	public void stopReckoning()	{
+		Bukkit.getServer().getScheduler().cancelTasks(this);
+	}
 
 	@Override
 	public void run() {
+		Player pTarget = getServer().getOnlinePlayers()[(int) (getServer().getOnlinePlayers().length * Math.random())];
+		Location target = pTarget.getLocation();
+		int radius = -1;
+		int countdown = -1;
+		String material = "";
+		boolean blockDamage = false;
 		
+		m = new Meteorite(pTarget, target, material, radius, countdown, blockDamage);
+		m.genMeteorite();
+		m.countdown();
+		m.setFalling(true);
+		m.dropMeteorite();
 	}
 }
