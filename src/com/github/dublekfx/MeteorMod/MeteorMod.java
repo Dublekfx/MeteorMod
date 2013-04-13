@@ -16,10 +16,10 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MeteorMod extends JavaPlugin implements Listener {
-	Player p;
-	Plugin plugin = this;
-	Meteorite m;
-	long randomLong = 0;
+	private Player p;
+	private Plugin plugin = this;
+	private Meteorite m;
+	private Counter count;
 
 	@Override
 	public void onEnable()	{
@@ -91,8 +91,8 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			if (args.length == 0)
 				return false;
 			else if (sender instanceof Player && args.length == 1)	{
-				m = new Meteorite(this, p, Integer.parseInt(args[0]));
-				m.countdown();
+				count = new Counter(this, Integer.parseInt(args[0]), p);
+				count.countdown();
 				return true;
 			}
 		}
@@ -149,7 +149,6 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			Logger.getLogger("Minecraft").info(pTarget.getName());
 			m = new Meteorite(plugin, pTarget, target, material, radius, countdown, blockDamage);
 			m.genMeteorite();
-			m.countdown();
 			m.setFalling(true);
 			m.dropMeteorite();
 			startReckoning((long) ((5*60*20 * Math.random()) + 5*60*20));

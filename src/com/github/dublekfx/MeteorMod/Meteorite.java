@@ -4,14 +4,11 @@ import java.util.ArrayList;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
-
-import com.github.dublekfx.MeteorMod.MeteorMod.scheduledReckoning;
 
 public class Meteorite implements Listener	{
 	
@@ -30,6 +27,7 @@ public class Meteorite implements Listener	{
 	private final Material DEFAULT_MAT = Material.NETHERRACK;
 	private ArrayList<Location> sphereCoords = new ArrayList<Location>();
 	protected ArrayList<UUID> blockID = new ArrayList<UUID>();
+	private Counter count;
 	
 	public Meteorite(Plugin pl, Player pT, int c)	{
 		pTarget = pT;
@@ -67,6 +65,7 @@ public class Meteorite implements Listener	{
 		falling = false;
 		executeCountdown = false;
 		mat = DEFAULT_MAT;
+		countdown = DEFAULT_COUNTDOWN;
 	}
 	public boolean isFalling()	{
 		return falling;
@@ -77,9 +76,11 @@ public class Meteorite implements Listener	{
 		
 	public void dropMeteorite()	{
 		if (executeCountdown == true)	{
-			this.countdown();
+			count = new Counter(plugin, countdown, pTarget);
+			count.countdown();
+			executeCountdown = false;
 		}
-		if (sphereCoords.size() >= 1 && this.isFalling())	{	//Ensures that genSphereCoords has been run, and falling = true
+		if (sphereCoords.size() >= 1 && this.isFalling() && executeCountdown == false)	{	//Ensures that genSphereCoords has been run, and falling = true
 			//target.getBlock().setType(Material.LAPIS_BLOCK);
 			for (Location a : sphereCoords)	{			
 				a.getBlock().setType(Material.AIR);
@@ -131,21 +132,7 @@ public class Meteorite implements Listener	{
 		//Logger.getLogger("Minecraft").info("KaBOOM");
 	}
 	
-	public void countdown()	{
-		Logger.getLogger("Minecraft").info("Countdown Started");
-		int playerExp = pTarget.getTotalExperience();
-		long startTime = pTarget.getWorld().getFullTime();
-		for (int c = 0; c <= countdown; c++)	{
-			while (pTarget.getWorld().getFullTime() != startTime + c * 20)	{
-			}
-			pTarget.setLevel(countdown - c);
-			Logger.getLogger("Minecraft").info("Current time: " + (countdown - c));
-		}
-		pTarget.giveExp(playerExp);
-	}
-	private void counterTick()	{
-		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new scheduledCounter(), 20);	
-	}
+
 	public class scheduledCounter implements Runnable	{
 
 		@Override
