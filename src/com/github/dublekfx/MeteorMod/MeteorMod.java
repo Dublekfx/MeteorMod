@@ -22,65 +22,14 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 	@Override
 	public void onEnable()	{
 		getServer().getPluginManager().registerEvents(this, this);
-		  Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new scheduledReckoning(), 20*20);
+		startReckoning(20*20);
 	}
 	
 	@Override
 	public void onDisable()	{
-		Bukkit.getServer().getScheduler().cancelTasks(this);
+		stopReckoning();
 	}
 	
-/*	public boolean onCommand (CommandSender sender, Command cmd, String label, String[] args)	{
-		p = (Player) sender;
-		if (cmd.getName().equalsIgnoreCase("meteor"))	{
-			if ((sender instanceof Player && sender.hasPermission("meteor.launch")) )	{
-				if (args.length == 0)	{
-					m = new Meteorite(p.getTargetBlock(null, 128).getLocation());
-					m.genMeteorite();
-					m.setFalling(true);
-					m.dropMeteorite();
-					return true;
-				}
-			}
-		}
-		if(cmd.getName().equalsIgnoreCase("meteormod"))	{
-			if ((sender instanceof Player && sender.hasPermission("meteor.launch")) )	{
-				if (args.length == 1)	{
-					m = new Meteorite(Bukkit.getPlayer(args[0]).getLocation());
-					m.genMeteorite();
-					m.setFalling(true);
-					m.dropMeteorite();
-					return true;
-				}
-				else if (args.length == 2)	{
-					m = new Meteorite(Bukkit.getPlayer(args[0]).getLocation(), Integer.parseInt(args[1]));
-					m.genMeteorite();
-					m.setFalling(true);
-					m.dropMeteorite();
-					return true;
-				}
-			}
-			if (!(sender instanceof Player))	{
-				if (args.length == 1)	{
-					m = new Meteorite(Bukkit.getPlayer(args[0]).getLocation());
-					m.genMeteorite();
-					m.setFalling(true);
-					m.dropMeteorite();
-					return true;
-				}
-				else if (args.length == 2)	{
-					m = new Meteorite(Bukkit.getPlayer(args[0]).getLocation(), Integer.parseInt(args[1]));
-					m.genMeteorite();
-					m.setFalling(true);
-					m.dropMeteorite();
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-*/	
-
 	public boolean onCommand (CommandSender sender, Command cmd, String label, String[] args)	{
 		p = (Player) sender;
 		Player pTarget = null;
@@ -144,6 +93,14 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 				m.countdown();
 				return true;
 			}
+		}
+		if (cmd.getName().equalsIgnoreCase("startreckoning"))	{
+			startReckoning(20*20);
+			return true;
+		}
+		if (cmd.getName().equalsIgnoreCase("stopreckoning"))	{
+			stopReckoning();
+			return true;
 		}
 		return false;
 	}

@@ -15,6 +15,16 @@ commands:
   countdown:
     description: Experience Timer
     usage: /countdown <duration>
+  startreckoning:
+    description: Making it rain
+    usage: /startreckoning
+    permission: meteor.launch
+    permission-message: You are not Shiva!
+  stopreckoning:
+    description: Clearing the skies
+    usage: /stopreckoning
+    permission: meteor.launch
+    permission-message: You are not Shiva!
 permissions:
   meteor.launch:
     description: Permits the user to reign justice down upon his enemies.
