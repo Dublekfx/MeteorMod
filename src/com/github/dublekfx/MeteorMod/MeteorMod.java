@@ -146,7 +146,7 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			String material = "";
 			boolean blockDamage = false;
 		
-			Logger.getLogger("Minecraft").info(pTarget.getName());
+			Logger.getLogger("Minecraft").info(pTarget.getName() + "has been randomly selected for termination");
 			m = new Meteorite(plugin, pTarget, target, material, radius, countdown, blockDamage);
 			m.genMeteorite();
 			m.setFalling(true);
