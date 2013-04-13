@@ -12,10 +12,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MeteorMod extends JavaPlugin implements Listener {
 	Player p;
+	Plugin plugin = this;
 	Meteorite m;
 	long randomLong = 0;
 
@@ -67,7 +69,7 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 						
 					}*/
 				}
-				m = new Meteorite(pTarget, target, material, radius, countdown, blockDamage);
+				m = new Meteorite(this, pTarget, target, material, radius, countdown, blockDamage);
 				m.genMeteorite();
 				m.setFalling(true);
 				m.dropMeteorite();
@@ -78,7 +80,7 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			if (sender instanceof Player && sender.hasPermission("meteor.launch"))	{
 				target = p.getTargetBlock(null, 128).getLocation();
 				System.out.println("meteor");
-				m = new Meteorite(pTarget, target, material, radius, countdown, blockDamage);
+				m = new Meteorite(this, pTarget, target, material, radius, countdown, blockDamage);
 				m.genMeteorite();
 				m.setFalling(true);
 				m.dropMeteorite();
@@ -89,7 +91,7 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			if (args.length == 0)
 				return false;
 			else if (sender instanceof Player && args.length == 1)	{
-				m = new Meteorite(p, Integer.parseInt(args[0]));
+				m = new Meteorite(this, p, Integer.parseInt(args[0]));
 				m.countdown();
 				return true;
 			}
@@ -145,7 +147,7 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			boolean blockDamage = false;
 		
 			Logger.getLogger("Minecraft").info(pTarget.getName());
-			m = new Meteorite(pTarget, target, material, radius, countdown, blockDamage);
+			m = new Meteorite(plugin, pTarget, target, material, radius, countdown, blockDamage);
 			m.genMeteorite();
 			m.countdown();
 			m.setFalling(true);

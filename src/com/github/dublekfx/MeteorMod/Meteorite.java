@@ -9,13 +9,13 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.EntityBlockFormEvent;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.plugin.Plugin;
 
-public class Meteorite implements Listener{
+import com.github.dublekfx.MeteorMod.MeteorMod.scheduledReckoning;
+
+public class Meteorite implements Listener	{
 	
+	private Plugin plugin;
 	private int countdown;
 	private int radius;
 	private final int DEFAULT_RADIUS = 3;
@@ -31,11 +31,12 @@ public class Meteorite implements Listener{
 	private ArrayList<Location> sphereCoords = new ArrayList<Location>();
 	protected ArrayList<UUID> blockID = new ArrayList<UUID>();
 	
-	public Meteorite(Player pT, int c)	{
+	public Meteorite(Plugin pl, Player pT, int c)	{
 		pTarget = pT;
 		countdown = c;
+		plugin = pl;
 	}
-	public Meteorite(Player pT, Location xyz, String m, int r, int c, boolean explode)	{
+	public Meteorite(Plugin pl, Player pT, Location xyz, String m, int r, int c, boolean explode)	{
 		if (pT != null)	{
 			pTarget = pT;
 		}
@@ -54,6 +55,7 @@ public class Meteorite implements Listener{
 			executeCountdown = true;
 		}
 		explosionBlockDamage = explode;
+		plugin = pl;
 	}
 	
 	public void defaultMeteorite()	{
@@ -140,5 +142,16 @@ public class Meteorite implements Listener{
 			Logger.getLogger("Minecraft").info("Current time: " + (countdown - c));
 		}
 		pTarget.giveExp(playerExp);
+	}
+	private void counterTick()	{
+		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new scheduledCounter(), 20);	
+	}
+	public class scheduledCounter implements Runnable	{
+
+		@Override
+		public void run() {
+			
+		}
+		
 	}
 }
