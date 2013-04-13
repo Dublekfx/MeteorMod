@@ -2,12 +2,15 @@ package com.github.dublekfx.MeteorMod;
 
 import java.util.ArrayList;
 import java.util.UUID;
-import java.util.logging.Logger;
-
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.plugin.Plugin;
 
 public class Meteorite implements Listener	{
@@ -17,22 +20,25 @@ public class Meteorite implements Listener	{
 	private int radius;
 	private final int DEFAULT_RADIUS = 3;
 	private final int DEFAULT_COUNTDOWN = 20;
-	protected Location target;
+	private Location target;
 	private Location skyTarget;
 	private Player pTarget;
-	private boolean executeCountdown;
-	private boolean falling;
 	private boolean explosionBlockDamage;
 	private Material mat;
 	private final Material DEFAULT_MAT = Material.NETHERRACK;
 	private ArrayList<Location> sphereCoords = new ArrayList<Location>();
-	protected ArrayList<UUID> blockID = new ArrayList<UUID>();
-	private Counter count;
+	private ArrayList<UUID> blockID = new ArrayList<UUID>();
+	private int initialLevel;
 	
 	public Meteorite(Plugin pl, Player pT, int c)	{
 		pTarget = pT;
 		countdown = c;
 		plugin = pl;
+		target = pTarget.getLocation();
+		defaultMeteorite();
+		plugin.getServer().getPluginManager().registerEvents(this, plugin);
+		//see wall o' text below
+		dropMeteorite();
 	}
 	public Meteorite(Plugin pl, Player pT, Location xyz, String m, int r, int c, boolean explode)	{
 		if (pT != null)	{
@@ -42,57 +48,79 @@ public class Meteorite implements Listener	{
 		
 		this.defaultMeteorite();
 		
-		if (r != -1)	{
+		if (r > 0)	{
 			radius = r;
 		}
 		if (!(m.equalsIgnoreCase("")))	{
 			Material.matchMaterial(m);
 		}
-		if (c != -1)	{
+		if (c > 0 && pTarget != null)	{
 			countdown = c;
-			executeCountdown = true;
 		}
 		explosionBlockDamage = explode;
 		plugin = pl;
+		plugin.getServer().getPluginManager().registerEvents(this, plugin);
+		//Ok, I know this is pretty much the most awful practice ever, but I need the list of meteorites in case
+		//the UUID list doesn't end up fully empty for some reason - it would suck to have like 43824578245 meteors
+		//checking events. This is why I suggested exploding all UUIDs on contact of 1. Would look less cool, yes,
+		//but would prevent this sort of issue. Here we are instead, you're welcome. ;-;
+		dropMeteorite();
 	}
 	
 	public void defaultMeteorite()	{
 		//target handled by constructor
 		radius = DEFAULT_RADIUS;
-		skyTarget = target;		//did I just alias?
+		skyTarget = target.clone();
 		target.setY(target.getWorld().getHighestBlockAt(target).getY());
 		skyTarget.setY(255 - radius);
-		falling = false;
-		executeCountdown = false;
 		mat = DEFAULT_MAT;
 		countdown = DEFAULT_COUNTDOWN;
-	}
-	public boolean isFalling()	{
-		return falling;
-	}
-	public void setFalling(boolean drop)	{
-		falling = drop;
-	}
-		
-	public void dropMeteorite()	{
-		if (executeCountdown == true)	{
-			count = new Counter(plugin, countdown, pTarget);
-			count.countdown();
-			executeCountdown = false;
-		}
-		if (sphereCoords.size() >= 1 && this.isFalling() && executeCountdown == false)	{	//Ensures that genSphereCoords has been run, and falling = true
-			//target.getBlock().setType(Material.LAPIS_BLOCK);
-			for (Location a : sphereCoords)	{			
-				a.getBlock().setType(Material.AIR);
-				blockID.add(skyTarget.getWorld().spawnFallingBlock(a, mat, (byte) 0).getUniqueId());
-			}			
-			Logger.getLogger("Minecraft").info("Let Chaos Reign!");
-		}
-		else
-			Logger.getLogger("Minecraft").info("Preconditions not met!");
+		if (pTarget != null) initialLevel = pTarget.getLevel();
 	}
 	
-	public void genMeteorite()	{	//Creates a floating ball. dropMeteor must be called separately
+	@EventHandler
+	public void onEntityChangeBlockEvent(EntityChangeBlockEvent event){
+		//Logger.getLogger("Minecraft").info("Meteor in position! (EntityChangeBlockEvent)");
+		try {
+			for (UUID u : blockID)	{
+				if (u.equals(event.getEntity().getUniqueId()))	{
+					//Logger.getLogger("Minecraft").info("Meteor in position!");
+					explode(event.getBlock().getLocation());
+					event.getBlock().setType(Material.AIR);
+					blockID.remove(u);
+					if (blockID.isEmpty())
+						doHandlerUnregister();
+					return;
+				}
+			}
+		} catch (NullPointerException e) {
+		}
+
+	}
+		
+	public void dropMeteorite() {
+		if (countdown >= 0) {
+			if (pTarget != null) {
+				pTarget.setLevel(countdown);
+			}
+			doCounterTick();
+			return;
+		} else {
+			if (pTarget != null) {
+				pTarget.setLevel(initialLevel);
+			}
+			genMeteorite();
+			if (sphereCoords.size() >= 1) { //Ensures that genSphereCoords has been run (well)
+				for (Location a : sphereCoords)	{			
+					a.getBlock().setType(Material.AIR);
+					blockID.add(skyTarget.getWorld().spawnFallingBlock(a, mat, (byte) 0).getUniqueId());
+				}			
+				plugin.getLogger().info("Meteorificationalizing " + target.getBlockX() + ", " + target.getBlockZ());
+			} else plugin.getLogger().info("What kind of a sphere did you just generate? Also, how?");
+		}
+	}
+	
+	public void genMeteorite()	{	//Creates a floating ball. Calling this in dropMeteorite() to make life easier.
 		sphereCoords = this.genSphereCoords(radius);
 		sphereCoords.removeAll(this.genSphereCoords(radius - 1));
 		for (Location a : sphereCoords)	{			
@@ -129,16 +157,42 @@ public class Meteorite implements Listener	{
 	}
 	public void explode(Location loc)	{
 		target.getWorld().createExplosion(loc.getX(), loc.getY(), loc.getZ(), 4F, false, explosionBlockDamage);
-		//Logger.getLogger("Minecraft").info("KaBOOM");
 	}
 	
 
+	public void doCounterTick() {
+		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new scheduledCounter(), 20);
+	}
 	public class scheduledCounter implements Runnable	{
 
 		@Override
 		public void run() {
-			
+			countdown--;
+			dropMeteorite();
 		}
 		
+	}
+	
+	public void doHandlerUnregister() {
+		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new handlerUnregister(this));
+	}
+	public class handlerUnregister implements Runnable {
+		Meteorite m;
+		public handlerUnregister(Meteorite m) {
+			this.m = m;
+		}
+		public void run() {
+			//I don't know if it's safe to do this inside an event handler, so synchronous task.
+			if (!blockID.isEmpty()) {
+				//there is no easier way to get entity by UUID, sadly. Loop here we come!
+				for (Entity e : target.getWorld().getEntities()) {
+					if (blockID.contains(e.getUniqueId())) { 
+						blockID.remove(e.getUniqueId());
+						e.remove();
+					}
+				}
+			}
+			HandlerList.unregisterAll(m);
+		}
 	}
 }

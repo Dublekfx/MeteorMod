@@ -1,25 +1,21 @@
 package com.github.dublekfx.MeteorMod;
 
-import java.util.UUID;
-import java.util.logging.Logger;
+import java.util.ArrayList;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MeteorMod extends JavaPlugin implements Listener {
 	private Player p;
 	private Plugin plugin = this;
-	private Meteorite m;
-	private Counter count;
+	
+	private ArrayList<Meteorite> meteorites = new ArrayList<Meteorite>();
 
 	@Override
 	public void onEnable()	{
@@ -45,6 +41,9 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			if ((sender instanceof Player && sender.hasPermission("meteor.launch")) || !(sender instanceof Player) )	{
 				target = p.getTargetBlock(null, 128).getLocation();
 				if (args.length == 0)	{
+					sender.sendMessage("Cleaning up..");
+					for (Meteorite m : meteorites)
+						m.doHandlerUnregister();
 					return false;
 				}
 				for (String s : args)	{
@@ -65,34 +64,15 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 					else if (s.substring(0, 2).equalsIgnoreCase("m:"))	{
 						material = s.substring(2);
 					}
-					/*else if (s.substring(0, 2).equalsIgnoreCase("p:"))	{
-						
-					}*/
 				}
-				m = new Meteorite(this, pTarget, target, material, radius, countdown, blockDamage);
-				m.genMeteorite();
-				m.setFalling(true);
-				m.dropMeteorite();
+				meteorites.add(new Meteorite(this, pTarget, target, material, radius, countdown, blockDamage));
 				return true;
 			}
 		}
 		if (cmd.getName().equalsIgnoreCase("meteor"))	{
 			if (sender instanceof Player && sender.hasPermission("meteor.launch"))	{
 				target = p.getTargetBlock(null, 128).getLocation();
-				System.out.println("meteor");
-				m = new Meteorite(this, pTarget, target, material, radius, countdown, blockDamage);
-				m.genMeteorite();
-				m.setFalling(true);
-				m.dropMeteorite();
-				return true;
-			}
-		}
-		if (cmd.getName().equalsIgnoreCase("countdown"))	{
-			if (args.length == 0)
-				return false;
-			else if (sender instanceof Player && args.length == 1)	{
-				count = new Counter(this, Integer.parseInt(args[0]), p);
-				count.countdown();
+				meteorites.add(new Meteorite(this, pTarget, target, material, radius, countdown, blockDamage));
 				return true;
 			}
 		}
@@ -105,23 +85,6 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			return true;
 		}
 		return false;
-	}
-	
-	@EventHandler
-	public void onEntityChangeBlockEvent(EntityChangeBlockEvent event){
-		//Logger.getLogger("Minecraft").info("Meteor in position! (EntityChangeBlockEvent)");
-		try {
-			for (UUID u : m.blockID)	{
-				if (u.equals(event.getEntity().getUniqueId()))	{
-					//Logger.getLogger("Minecraft").info("Meteor in position!");
-					m.explode(event.getBlock().getLocation());
-					event.getBlock().setType(Material.AIR);
-					return;
-				}
-			}
-		} catch (NullPointerException e) {
-		}
-
 	}
 	
 	public void startReckoning(long rLong)	{
@@ -146,11 +109,8 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			String material = "";
 			boolean blockDamage = false;
 		
-			Logger.getLogger("Minecraft").info(pTarget.getName() + "has been randomly selected for termination");
-			m = new Meteorite(plugin, pTarget, target, material, radius, countdown, blockDamage);
-			m.genMeteorite();
-			m.setFalling(true);
-			m.dropMeteorite();
+			getLogger().info(pTarget.getName() + "has been randomly selected for termination");
+			meteorites.add(new Meteorite(plugin, pTarget, target, material, radius, countdown, blockDamage));
 			startReckoning((long) ((5*60*20 * Math.random()) + 5*60*20));
 		}
 	}
