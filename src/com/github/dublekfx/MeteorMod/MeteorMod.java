@@ -10,17 +10,20 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 public final class MeteorMod extends JavaPlugin implements Listener {
 	private Player p;
 	private Plugin plugin = this;
+	private BukkitTask task;
 	
 	private ArrayList<Meteorite> meteorites = new ArrayList<Meteorite>();
 
 	@Override
 	public void onEnable()	{
 		getServer().getPluginManager().registerEvents(this, this);
-		startReckoning(20*20);
+		//startReckoning(20*20);
 	}
 	
 	@Override
@@ -77,7 +80,7 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 			}
 		}
 		if (cmd.getName().equalsIgnoreCase("startreckoning"))	{
-			startReckoning(20*20);
+			startReckoning(20*300);
 			return true;
 		}
 		if (cmd.getName().equalsIgnoreCase("stopreckoning"))	{
@@ -88,30 +91,34 @@ public final class MeteorMod extends JavaPlugin implements Listener {
 	}
 	
 	public void startReckoning(long rLong)	{
-		  Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, new scheduledReckoning(), rLong);	
+		task = new scheduledReckoning().runTaskTimer(this, 20*300, rLong);
 		  }
 	
 	public void stopReckoning()	{
-		Bukkit.getServer().getScheduler().cancelTasks(this);
+		task.cancel();
 	}
 
 
 
-	public class scheduledReckoning	implements Runnable	{
+	public class scheduledReckoning	extends BukkitRunnable	{
 		@Override
 		public void run() {
-			Player pTarget = getServer().getOnlinePlayers()[(int) (getServer().getOnlinePlayers().length * Math.random())];
-			Location target = pTarget.getLocation();
-			target.setX((int) ((160 * Math.random()) - 80));
-			target.setZ((int) ((160 * Math.random()) - 80));
-			int radius = -1;
-			int countdown = -1;
-			String material = "";
-			boolean blockDamage = false;
-		
-			getLogger().info(pTarget.getName() + "has been randomly selected for termination");
-			meteorites.add(new Meteorite(plugin, pTarget, target, material, radius, countdown, blockDamage));
-			startReckoning((long) ((5*60*20 * Math.random()) + 5*60*20));
+			if (getServer().getOnlinePlayers().length >= 1) {
+				Player pTarget = getServer().getOnlinePlayers()[(int) (getServer()
+						.getOnlinePlayers().length * Math.random())];
+				Location target = pTarget.getLocation();
+				target.setX((int) ((160 * Math.random()) - 80));
+				target.setZ((int) ((160 * Math.random()) - 80));
+				int radius = -1;
+				int countdown = -1;
+				String material = "";
+				boolean blockDamage = false;
+				getLogger().info(
+						pTarget.getName()
+								+ "has been randomly selected for termination");
+				meteorites.add(new Meteorite(plugin, pTarget, target, material,
+						radius, countdown, blockDamage));
+			}
 		}
 	}
 }
